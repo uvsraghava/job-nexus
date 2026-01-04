@@ -34,7 +34,7 @@ export default function StudentDashboard() {
 
   const fetchJobs = async (token: string) => {
     try {
-      const res = await axios.get('http://localhost:5001/api/jobs', {
+      const res = await axios.get('https://job-nexus-f3ub.onrender.com/api/jobs', {
         headers: { 'x-auth-token': token }
       });
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -56,7 +56,7 @@ export default function StudentDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:5001/api/jobs/${jobId}/apply`, formData, {
+      await axios.post(`https://job-nexus-f3ub.onrender.com/api/jobs/${jobId}/apply`, formData, {
         headers: { 'x-auth-token': token, 'Content-Type': 'multipart/form-data' }
       });
       alert('Application Successful!');
@@ -73,7 +73,7 @@ export default function StudentDashboard() {
     setActionLoading(jobId);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:5001/api/jobs/${jobId}/withdraw`, {}, {
+      await axios.post(`https://job-nexus-f3ub.onrender.com/api/jobs/${jobId}/withdraw`, {}, {
         headers: { 'x-auth-token': token }
       });
       alert('Application Withdrawn.');
@@ -92,7 +92,7 @@ export default function StudentDashboard() {
     setActionLoading(jobId);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:5001/api/jobs/${jobId}/accept-offer`, {}, {
+      await axios.post(`https://job-nexus-f3ub.onrender.com/api/jobs/${jobId}/accept-offer`, {}, {
         headers: { 'x-auth-token': token }
       });
       alert('Congratulations! Offer Accepted.');

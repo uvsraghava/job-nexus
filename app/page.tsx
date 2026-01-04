@@ -15,7 +15,7 @@ export default function Home() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get('http://localhost:5001/api/jobs');
+        const res = await axios.get('https://job-nexus-f3ub.onrender.com/api/jobs');
         // Animate the number (simple version)
         setJobCount(res.data.length);
       } catch (err) {

@@ -41,7 +41,7 @@ export default function RecruiterDashboard() {
 
   const fetchMyJobs = async (token: string) => {
     try {
-      const res = await axios.get('http://localhost:5001/api/jobs/my-jobs', {
+      const res = await axios.get('https://job-nexus-f3ub.onrender.com/api/jobs/my-jobs', {
         headers: { 'x-auth-token': token }
       });
       setJobs(res.data);
@@ -85,7 +85,7 @@ export default function RecruiterDashboard() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:5001/api/jobs/${jobId}/application/${studentId}`,
+        `https://job-nexus-f3ub.onrender.com/api/jobs/${jobId}/application/${studentId}`,
         { status },
         { headers: { 'x-auth-token': token } }
       );
@@ -102,7 +102,7 @@ export default function RecruiterDashboard() {
     setPosting(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5001/api/jobs', newJob, {
+      await axios.post('https://job-nexus-f3ub.onrender.com/api/jobs', newJob, {
         headers: { 'x-auth-token': token }
       });
       setNewJob({ title: '', company: '', location: '', salary: '', description: '', type: 'Full-time' });
@@ -121,7 +121,7 @@ export default function RecruiterDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5001/api/jobs/${jobId}`, {
+      await axios.delete(`https://job-nexus-f3ub.onrender.com/api/jobs/${jobId}`, {
         headers: { 'x-auth-token': token }
       });
       fetchMyJobs(token!);
@@ -259,7 +259,7 @@ export default function RecruiterDashboard() {
                                 <div><div className="font-bold">{app.name || 'Unknown'}</div><div className="text-sm text-gray-400">{app.email}</div></div>
                               </div>
                               <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                                <a href={`http://localhost:5001/${app.resume}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition"><FileText className="w-4 h-4" /> Resume</a>
+                                <a href={`https://job-nexus-f3ub.onrender.com/${app.resume}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition"><FileText className="w-4 h-4" /> Resume</a>
                                 
                                 {app.status === 'Pending' && (
                                   <div className="flex items-center gap-2">

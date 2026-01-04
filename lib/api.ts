@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create the axios instance (It is an OBJECT, not a function)
 const api = axios.create({
-  baseURL: 'http://localhost:5001/api', // Make sure this is 5001
+  baseURL: 'https://job-nexus-f3ub.onrender.com/api', // Make sure this is 5001
   headers: {
     'Content-Type': 'application/json',
   },

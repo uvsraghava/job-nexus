@@ -20,7 +20,7 @@ export default function Login() {
 
     try {
       // 1. Send Login Request
-      const res = await axios.post('http://localhost:5001/api/auth/login', { email, password });
+      const res = await axios.post('https://job-nexus-f3ub.onrender.com/api/auth/login', { email, password });
       
       // 2. Save Data to Browser
       localStorage.setItem('token', res.data.token);

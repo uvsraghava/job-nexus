@@ -22,7 +22,7 @@ export default function Register() {
 
     try {
       // Note: Port is set to 5001 explicitly
-      await axios.post('http://localhost:5001/api/auth/register', {
+      await axios.post('https://job-nexus-f3ub.onrender.com/api/auth/register', {
         name,
         email,
         password,

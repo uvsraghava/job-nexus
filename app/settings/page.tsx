@@ -26,7 +26,7 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.put('http://localhost:5001/api/auth/update-profile', 
+      const res = await axios.put('https://job-nexus-f3ub.onrender.com/api/auth/update-profile', 
         { name, password },
         { headers: { 'x-auth-token': token } }
       );

@@ -43,11 +43,11 @@ export default function FacultyDashboard() {
 
   const fetchData = async (token: string) => {
     try {
-      const res = await axios.get('http://localhost:5001/api/jobs');
+      const res = await axios.get('https://job-nexus-f3ub.onrender.com/api/jobs');
       const allJobs = res.data;
 
       try {
-        const pendingRes = await axios.get('http://localhost:5001/api/auth/pending-students', {
+        const pendingRes = await axios.get('https://job-nexus-f3ub.onrender.com/api/auth/pending-students', {
           headers: { 'x-auth-token': token }
         });
         setPendingStudents(pendingRes.data);
@@ -150,7 +150,7 @@ export default function FacultyDashboard() {
   const handleApproveStudent = async (studentId: string) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5001/api/auth/approve-student/${studentId}`, {}, {
+      await axios.put(`https://job-nexus-f3ub.onrender.com/api/auth/approve-student/${studentId}`, {}, {
         headers: { 'x-auth-token': token }
       });
       fetchData(token!);
