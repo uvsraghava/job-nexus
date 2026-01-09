@@ -7,7 +7,7 @@ import {
   LineChart, Users, Briefcase, CheckCircle2, LogOut, 
   TrendingUp, Building2, PieChart as PieIcon, BarChart3,
   Calculator, Scale, ArrowUpRight, ArrowDownRight, UserPlus, Check, ShieldAlert,
-  Settings as SettingsIcon, PartyPopper, Trophy, Clock
+  Settings as SettingsIcon, PartyPopper, Trophy, Clock, ShieldCheck, Trash2 
 } from 'lucide-react';
 import { 
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, 
@@ -20,10 +20,16 @@ export default function FacultyDashboard() {
   const [packageStats, setPackageStats] = useState({ highest: 0, lowest: 0, average: 0, median: 0 });
   
   // --- SPLIT LISTS ---
-  const [confirmedPlacements, setConfirmedPlacements] = useState<any[]>([]); // New List
-  const [recentOffers, setRecentOffers] = useState<any[]>([]); // New List
+  const [confirmedPlacements, setConfirmedPlacements] = useState<any[]>([]); 
+  const [recentOffers, setRecentOffers] = useState<any[]>([]); 
   
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
+  
+  // --- MASTER FACULTY STATE ---
+  const [pendingJobs, setPendingJobs] = useState<any[]>([]);
+  const [activeJobs, setActiveJobs] = useState<any[]>([]); // NEW: For Deletion List
+  const [isMasterFaculty, setIsMasterFaculty] = useState(false);
+
   const [chartData, setChartData] = useState<any[]>([]);
   const [salaryData, setSalaryData] = useState<any[]>([]);
   const [userName, setUserName] = useState('');
@@ -43,9 +49,14 @@ export default function FacultyDashboard() {
 
   const fetchData = async (token: string) => {
     try {
-      const res = await axios.get('https://job-nexus-f3ub.onrender.com/api/jobs');
+      // 1. Fetch General Stats (Approved Jobs)
+      const res = await axios.get('https://job-nexus-f3ub.onrender.com/api/jobs'); 
       const allJobs = res.data;
+      
+      // NEW: Save all active jobs so Master Faculty can see/delete them
+      setActiveJobs(allJobs);
 
+      // 2. Fetch Pending Students
       try {
         const pendingRes = await axios.get('https://job-nexus-f3ub.onrender.com/api/auth/pending-students', {
           headers: { 'x-auth-token': token }
@@ -55,62 +66,42 @@ export default function FacultyDashboard() {
         console.error("Could not fetch pending students", e);
       }
 
-      let appCount = 0;
-      let confirmedJoins = 0;
-      let offerCount = 0;
-      let rejectedCount = 0;
-      let pendingCount = 0;
-      
-      let confirmedList: any[] = [];
-      let offersList: any[] = [];
-      let salaryStats: any[] = [];
-      let offerSalaries: number[] = [];
+      // 3. Fetch Pending Jobs (Master Faculty Only)
+      try {
+        const pendingJobsRes = await axios.get('https://job-nexus-f3ub.onrender.com/api/jobs/pending', {
+          headers: { 'x-auth-token': token }
+        });
+        setIsMasterFaculty(true);
+        setPendingJobs(pendingJobsRes.data);
+      } catch (e) {
+        setIsMasterFaculty(false);
+      }
+
+      // --- EXISTING CALCULATIONS ---
+      let appCount = 0, confirmedJoins = 0, offerCount = 0, rejectedCount = 0, pendingCount = 0;
+      let confirmedList: any[] = [], offersList: any[] = [], salaryStats: any[] = [], offerSalaries: number[] = [];
 
       allJobs.forEach((job: any) => {
         appCount += job.applicants.length;
         
         job.applicants.forEach((app: any) => {
-          // 1. CONFIRMED JOINS (The "Success" List)
           if (app.status === 'Confirmed') {
-            confirmedJoins++;
-            offerCount++; // Still counts as an offer made
+            confirmedJoins++; offerCount++; 
             if (job.salary) offerSalaries.push(parseFloat(job.salary));
-
-            confirmedList.push({
-              studentName: app.name, 
-              company: job.company, 
-              role: job.title, 
-              package: job.salary,
-              email: app.email,
-              status: app.status
-            });
+            confirmedList.push({ studentName: app.name, company: job.company, role: job.title, package: job.salary, email: app.email, status: app.status });
           } 
-          // 2. ACTIVE OFFERS (The "Pending Decision" List)
           else if (app.status === 'Accepted') {
             offerCount++;
             if (job.salary) offerSalaries.push(parseFloat(job.salary));
-
-            offersList.push({
-              studentName: app.name, 
-              company: job.company, 
-              role: job.title, 
-              package: job.salary,
-              email: app.email,
-              status: app.status
-            });
+            offersList.push({ studentName: app.name, company: job.company, role: job.title, package: job.salary, email: app.email, status: app.status });
           } 
-          // 3. OTHER STATS
-          else if (app.status === 'Rejected') {
-            rejectedCount++;
-          } else if (app.status === 'Pending') {
-            pendingCount++;
-          }
+          else if (app.status === 'Rejected') rejectedCount++;
+          else if (app.status === 'Pending') pendingCount++;
         });
 
         if(job.salary) salaryStats.push({ name: job.company, salary: parseInt(job.salary) });
       });
 
-      // --- CALCULATIONS ---
       let pStats = { highest: 0, lowest: 0, average: 0, median: 0 };
       if (offerSalaries.length > 0) {
         offerSalaries.sort((a, b) => a - b);
@@ -122,22 +113,11 @@ export default function FacultyDashboard() {
         pStats.median = offerSalaries.length % 2 !== 0 ? offerSalaries[mid] : (offerSalaries[mid - 1] + offerSalaries[mid]) / 2;
       }
 
-      setStats({ 
-        totalJobs: allJobs.length, 
-        totalApps: appCount, 
-        totalHired: confirmedJoins
-      });
-      
+      setStats({ totalJobs: allJobs.length, totalApps: appCount, totalHired: confirmedJoins });
       setPackageStats(pStats);
-      setConfirmedPlacements(confirmedList); // Set Separate List
-      setRecentOffers(offersList); // Set Separate List
-      
-      setChartData([
-        { name: 'Offers/Hired', value: offerCount }, 
-        { name: 'Rejected', value: rejectedCount }, 
-        { name: 'Pending', value: pendingCount }
-      ]);
-      
+      setConfirmedPlacements(confirmedList); 
+      setRecentOffers(offersList); 
+      setChartData([{ name: 'Offers/Hired', value: offerCount }, { name: 'Rejected', value: rejectedCount }, { name: 'Pending', value: pendingCount }]);
       setSalaryData(salaryStats.sort((a,b) => b.salary - a.salary).slice(0, 5));
       setLoading(false);
 
@@ -150,14 +130,31 @@ export default function FacultyDashboard() {
   const handleApproveStudent = async (studentId: string) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`https://job-nexus-f3ub.onrender.com/api/auth/approve-student/${studentId}`, {}, {
-        headers: { 'x-auth-token': token }
-      });
+      await axios.put(`https://job-nexus-f3ub.onrender.com/api/auth/approve-student/${studentId}`, {}, { headers: { 'x-auth-token': token } });
       fetchData(token!);
       alert("Student Approved!");
-    } catch (err) {
-      alert("Approval Failed");
-    }
+    } catch (err) { alert("Approval Failed"); }
+  };
+
+  const handleApproveJob = async (jobId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`https://job-nexus-f3ub.onrender.com/api/jobs/approve/${jobId}`, {}, { headers: { 'x-auth-token': token } });
+      // Refresh to update lists
+      fetchData(token!);
+      alert("Job Approved & Live! 🚀");
+    } catch (err) { alert("Failed to approve job."); }
+  };
+
+  // --- NEW: Delete Job Function (Master Only) ---
+  const handleDeleteJob = async (jobId: string) => {
+    if(!confirm("Are you sure you want to delete this active job? This cannot be undone.")) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`https://job-nexus-f3ub.onrender.com/api/jobs/${jobId}`, { headers: { 'x-auth-token': token } });
+      fetchData(token!);
+      alert("Job Deleted Successfully.");
+    } catch (err) { alert("Failed to delete job."); }
   };
 
   const handleLogout = () => { localStorage.clear(); router.push('/login'); };
@@ -182,6 +179,64 @@ export default function FacultyDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
+        
+        {/* --- 1. PENDING JOB APPROVALS (Master Access) --- */}
+        {isMasterFaculty && pendingJobs.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-indigo-400 mb-4 flex items-center gap-2">
+              <ShieldCheck className="w-6 h-6" /> Pending Approvals (Master Access)
+            </h2>
+            <div className="grid gap-3">
+              {pendingJobs.map((job) => (
+                <div key={job._id} className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl hover:border-indigo-500/50 transition">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold"><Briefcase className="w-6 h-6" /></div>
+                    <div>
+                      <h3 className="font-bold text-white text-lg">{job.title}</h3>
+                      <div className="text-sm text-gray-400 flex items-center gap-2">
+                         <Building2 className="w-3 h-3"/> {job.company} 
+                         <span className="text-gray-600">•</span> {job.location}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">Recruiter: {job.recruiterId?.email}</div>
+                    </div>
+                  </div>
+                  <button onClick={() => handleApproveJob(job._id)} className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition shadow-lg shadow-indigo-500/20">
+                    <CheckCircle2 className="w-5 h-5" /> Approve
+                  </button>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* --- 2. LIVE JOB MANAGEMENT (Master Access - Delete Mistakes) --- */}
+        {isMasterFaculty && (
+           <div className="mb-12">
+             <details className="group">
+                <summary className="flex items-center gap-2 cursor-pointer text-gray-400 hover:text-white transition list-none">
+                    <Trash2 className="w-4 h-4" /> 
+                    <span className="font-bold text-sm uppercase tracking-wider">Manage Active Jobs</span>
+                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded ml-auto group-open:rotate-180 transition">▼</span>
+                </summary>
+                <div className="mt-4 grid md:grid-cols-2 gap-4 p-4 rounded-xl bg-red-900/10 border border-red-500/10">
+                    {activeJobs.map((job) => (
+                        <div key={job._id} className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5">
+                            <div className="truncate pr-4">
+                                <div className="font-bold text-sm text-gray-200">{job.title}</div>
+                                <div className="text-xs text-gray-500">{job.company}</div>
+                            </div>
+                            <button onClick={() => handleDeleteJob(job._id)} className="text-red-400 hover:text-red-300 p-2 hover:bg-red-500/10 rounded transition" title="Delete Job">
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ))}
+                    {activeJobs.length === 0 && <p className="text-gray-500 text-sm">No active jobs found.</p>}
+                </div>
+             </details>
+           </div>
+        )}
+
+        {/* --- 3. PENDING STUDENT APPROVALS --- */}
         {pendingStudents.length > 0 && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6">
             <h2 className="text-xl font-bold text-amber-400 mb-4 flex items-center gap-2"><ShieldAlert className="w-5 h-5" /> Pending Student Approvals</h2>
@@ -268,7 +323,7 @@ export default function FacultyDashboard() {
           </motion.div>
         </div>
 
-        {/* --- SECTION 1: CONFIRMED PLACEMENTS (NEW) --- */}
+        {/* --- SECTION 1: CONFIRMED PLACEMENTS --- */}
         {confirmedPlacements.length > 0 && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-white">

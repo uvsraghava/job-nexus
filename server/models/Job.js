@@ -26,6 +26,14 @@ const JobSchema = new mongoose.Schema({
     enum: ['Full-time', 'Part-time', 'Internship', 'Contract'],
     default: 'Full-time'
   },
+  
+  // --- JOB APPROVAL STATUS ---
+  status: {
+    type: String,
+    enum: ['pending', 'approved'],
+    default: 'pending' 
+  },
+
   recruiterId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -43,9 +51,23 @@ const JobSchema = new mongoose.Schema({
       status: {
         type: String,
         // --- UPDATED ENUM LIST ---
-        enum: ['Pending', 'Accepted', 'Rejected', 'Confirmed', 'Withdrawn (System)'],
+        // Added 'Interview Scheduled'
+        enum: ['Pending', 'Accepted', 'Rejected', 'Confirmed', 'Withdrawn (System)', 'Interview Scheduled'],
         default: 'Pending'
       },
+      
+      // --- FEEDBACK & INTERVIEW FIELDS ---
+      feedback: {
+        type: String,
+        default: ''
+      },
+      interviewDate: {
+        type: Date
+      },
+      interviewLink: {
+        type: String
+      },
+
       appliedAt: {
         type: Date,
         default: Date.now

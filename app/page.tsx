@@ -5,7 +5,7 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import { 
   ArrowRight, Briefcase, GraduationCap, LineChart, 
-  Waypoints, TrendingUp, Users, Building2 
+  Waypoints
 } from 'lucide-react';
 
 export default function Home() {
@@ -38,7 +38,7 @@ export default function Home() {
       {/* --- NAVBAR --- */}
       <nav className="fixed top-0 w-full z-50 backdrop-blur-md bg-[#0f172a]/70 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          {/* NEW CREATIVE LOGO */}
+          {/* LOGO */}
           <div className="flex items-center gap-2 group cursor-pointer">
             <div className="relative w-8 h-8 flex items-center justify-center">
               <div className="absolute inset-0 bg-blue-600 rounded-lg rotate-3 group-hover:rotate-12 transition-transform duration-300"></div>
@@ -50,13 +50,22 @@ export default function Home() {
             </span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
+          <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-300">
             <Link href="/roadmap" className="hover:text-blue-400 transition flex items-center gap-1">
               Career Roadmap
             </Link>
             <Link href="/partners" className="hover:text-purple-400 transition flex items-center gap-1">
               Hiring Partners
             </Link>
+            
+            {/* --- NEW: REGISTER LINK --- */}
+            <Link 
+              href="/register" 
+              className="text-white hover:text-blue-400 transition-colors ml-4"
+            >
+              Register
+            </Link>
+
             <Link href="/login" className="px-5 py-2 bg-white text-black rounded-full font-bold hover:bg-gray-100 transition shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]">
               Login
             </Link>

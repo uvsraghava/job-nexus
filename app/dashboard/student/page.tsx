@@ -2,11 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, MapPin, Building2, Banknote, 
   Briefcase, LogOut, User, CheckCircle2, Loader2, Undo2,
-  Settings as SettingsIcon, PartyPopper, AlertCircle 
+  Settings as SettingsIcon, PartyPopper, AlertCircle, MessageCircle, Video, Calendar
 } from 'lucide-react';
 
 export default function StudentDashboard() {
@@ -17,6 +17,10 @@ export default function StudentDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userName, setUserName] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
+  
+  // --- MODALS STATE ---
+  const [feedbackModal, setFeedbackModal] = useState<{ isOpen: boolean, message: string }>({ isOpen: false, message: '' });
+
   const router = useRouter();
 
   useEffect(() => {
@@ -85,10 +89,8 @@ export default function StudentDashboard() {
     }
   };
 
-  // --- NEW: ACCEPT OFFER FUNCTION ---
   const handleFinalizeOffer = async (jobId: string) => {
     if(!confirm("Are you sure? Accepting this offer will automatically WITHDRAW you from all other applications. This is final.")) return;
-    
     setActionLoading(jobId);
     try {
       const token = localStorage.getItem('token');
@@ -104,6 +106,10 @@ export default function StudentDashboard() {
     }
   };
 
+  const openFeedback = (msg: string) => {
+    setFeedbackModal({ isOpen: true, message: msg || "No specific feedback provided." });
+  };
+
   const handleLogout = () => { localStorage.clear(); router.push('/login'); };
 
   const filteredJobs = jobs.filter(job => 
@@ -114,7 +120,7 @@ export default function StudentDashboard() {
   if (loading) return <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white"><Loader2 className="w-10 h-10 animate-spin text-blue-500" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans">
+    <div className="min-h-screen bg-[#0f172a] text-white font-sans relative">
       <header className="sticky top-0 z-50 bg-[#0f172a]/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -156,6 +162,9 @@ export default function StudentDashboard() {
             const myApp = job.applicants.find((app: any) => app.studentId === currentUserId);
             const status = myApp ? myApp.status : null;
             const hasApplied = !!myApp;
+            const feedback = myApp ? myApp.feedback : null;
+            const interviewDate = myApp ? myApp.interviewDate : null;
+            const interviewLink = myApp ? myApp.interviewLink : null;
 
             return (
               <motion.div key={job._id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ y: -5 }} className={`bg-white/5 border rounded-2xl p-6 transition-all group ${status === 'Confirmed' ? 'border-amber-500/50 bg-amber-500/10' : 'border-white/10 hover:border-blue-500/30'}`}>
@@ -170,7 +179,7 @@ export default function StudentDashboard() {
                   <div className="flex items-center gap-1"><Banknote className="w-4 h-4 text-gray-500" />{job.salary} LPA</div>
                 </div>
 
-                {/* --- DYNAMIC BUTTONS BASED ON STATUS --- */}
+                {/* --- DYNAMIC BUTTONS --- */}
                 
                 {!hasApplied && (
                   <button onClick={() => handleApply(job._id)} disabled={actionLoading === job._id} className="w-full py-3 rounded-xl font-bold bg-white text-black hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2">
@@ -182,6 +191,26 @@ export default function StudentDashboard() {
                   <button onClick={() => handleWithdraw(job._id)} disabled={actionLoading === job._id} className="w-full py-3 rounded-xl font-bold bg-gray-500/20 text-gray-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2">
                     {actionLoading === job._id ? <Loader2 className="animate-spin" /> : <><Undo2 className="w-4 h-4"/> Withdraw</>}
                   </button>
+                )}
+
+                {/* --- NEW: INTERVIEW CARD --- */}
+                {status === 'Interview Scheduled' && (
+                  <div className="w-full p-4 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex flex-col gap-3">
+                     <div className="flex items-center gap-2 text-indigo-300 font-bold text-sm">
+                       <Video className="w-4 h-4" /> Interview Scheduled
+                     </div>
+                     {interviewDate && (
+                       <div className="flex items-center gap-2 text-xs text-gray-300">
+                         <Calendar className="w-3 h-3" /> 
+                         {new Date(interviewDate).toLocaleString()}
+                       </div>
+                     )}
+                     {interviewLink && (
+                       <a href={interviewLink} target="_blank" rel="noopener noreferrer" className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2 transition">
+                         Join Video Call
+                       </a>
+                     )}
+                  </div>
                 )}
 
                 {status === 'Accepted' && (
@@ -206,8 +235,15 @@ export default function StudentDashboard() {
                 )}
 
                 {status === 'Rejected' && (
-                  <div className="w-full py-3 rounded-xl font-bold bg-red-500/10 text-red-500 border border-red-500/20 flex items-center justify-center gap-2">
-                    Rejected
+                  <div className="space-y-2">
+                    <div className="w-full py-3 rounded-xl font-bold bg-red-500/10 text-red-500 border border-red-500/20 flex items-center justify-center gap-2">
+                      Rejected
+                    </div>
+                    {feedback && (
+                      <button onClick={() => openFeedback(feedback)} className="w-full py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 flex items-center justify-center gap-1 transition">
+                        <MessageCircle className="w-3 h-3" /> View Reason
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -216,6 +252,34 @@ export default function StudentDashboard() {
           })}
         </div>
       </main>
+
+      {/* --- FEEDBACK MODAL --- */}
+      <AnimatePresence>
+        {feedbackModal.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setFeedbackModal({ ...feedbackModal, isOpen: false })} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-sm bg-[#1e293b] border border-white/10 rounded-2xl p-6 shadow-2xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-red-500/10 rounded-full text-red-500">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-white">Application Feedback</h3>
+              </div>
+              
+              <div className="bg-black/20 rounded-lg p-4 border border-white/5 text-gray-300 italic mb-6 text-sm">
+                "{feedbackModal.message}"
+              </div>
+
+              <button 
+                onClick={() => setFeedbackModal({ ...feedbackModal, isOpen: false })} 
+                className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg transition"
+              >
+                Close
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

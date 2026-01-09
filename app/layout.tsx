@@ -1,14 +1,14 @@
-import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+
+// Load standard Google Font (Inter)
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Project Temp',
-  description: 'Created with v0',
-  generator: 'v0.app',
-}
+  title: "Job Nexus | Campus Placement Platform",
+  description: "Connect students, recruiters, and faculty in one unified platform.",
+};
 
 export default function RootLayout({
   children,
@@ -17,10 +17,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className={inter.className}>
         {children}
-        <Analytics />
       </body>
     </html>
-  )
+  );
 }

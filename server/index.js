@@ -4,29 +4,34 @@ const connectDB = require('./config/db');
 const cors = require('cors');
 require('dotenv').config();
 
-// 1. CREATE APP HERE (This was missing or too low)
+// 1. CREATE APP
 const app = express();
 
 // 2. Connect Database
 connectDB();
 
-// 3. Middleware
+// 3. Middleware (UPDATED CORS)
 app.use(express.json());
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(cors({ 
+  origin: [
+    "http://localhost:3000",                // For local development
+    "https://jobnexus-try.vercel.app",      // Your LIVE Frontend
+    "https://jobnexus-try.vercel.app/"      // Trailing slash version (safety)
+  ],
+  credentials: true 
+}));
 
 // 4. Import Routes
 const authRoutes = require('./routes/auth');
-const jobRoutes = require('./routes/jobs');   // <-- Ensure this file has module.exports = router
+const jobRoutes = require('./routes/jobs');   
 const adminRoutes = require('./routes/admin');
 
-// DEBUG (Optional - you can remove this later)
-console.log('Job Routes Status:', jobRoutes); 
-
-// 5. Define Routes (Now 'app' exists, so this works)
+// 5. Define Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/admin', adminRoutes);
-// Allow the browser to access files in the 'uploads' folder
+
+// (Optional) Static folder - mostly replaced by Cloudinary now, but safe to keep
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 6. Start Server
