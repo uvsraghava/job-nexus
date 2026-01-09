@@ -50,22 +50,27 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans flex items-center justify-center p-6">
-      <div className="w-full max-w-lg bg-[#1e293b] border border-white/10 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+    <div className="min-h-screen bg-[#0f172a] text-white font-sans flex items-center justify-center p-4 md:p-6">
+      <div className="w-full max-w-lg bg-[#1e293b] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
         
-        <button onClick={goBack} className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition">
+        <button onClick={goBack} className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 md:mb-8 transition text-sm md:text-base">
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </button>
 
-        <h1 className="text-3xl font-bold mb-2">Account Settings</h1>
-        <p className="text-gray-400 mb-8">Update your profile details.</p>
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">Account Settings</h1>
+        <p className="text-sm md:text-base text-gray-400 mb-6 md:mb-8">Update your profile details.</p>
 
-        <form onSubmit={handleUpdate} className="space-y-6">
+        <form onSubmit={handleUpdate} className="space-y-4 md:space-y-6">
           <div>
             <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">Full Name</label>
             <div className="relative">
               <User className="absolute left-3 top-3 w-5 h-5 text-gray-500" />
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition" />
+              <input 
+                type="text" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition text-base" 
+              />
             </div>
           </div>
 
@@ -73,11 +78,21 @@ export default function SettingsPage() {
             <label className="text-xs font-bold text-gray-400 uppercase mb-2 block">New Password</label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-500" />
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition" />
+              <input 
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                placeholder="••••••••" 
+                className="w-full bg-black/20 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition text-base" 
+              />
             </div>
           </div>
 
-          <button type="submit" disabled={loading} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition">
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition active:scale-[0.98]"
+          >
             {loading ? <Loader2 className="animate-spin" /> : <><Save className="w-5 h-5" /> Save Changes</>}
           </button>
         </form>

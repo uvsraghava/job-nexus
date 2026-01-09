@@ -41,8 +41,11 @@ export default function StudentDashboard() {
       const res = await axios.get('https://job-nexus-f3ub.onrender.com/api/jobs', {
         headers: { 'x-auth-token': token }
       });
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      setCurrentUserId(payload.user.id);
+      // Safety check for token structure
+      if(token.split('.').length > 1) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUserId(payload.user.id);
+      }
       
       setJobs(res.data);
       setLoading(false);
@@ -64,7 +67,7 @@ export default function StudentDashboard() {
         headers: { 'x-auth-token': token, 'Content-Type': 'multipart/form-data' }
       });
       alert('Application Successful!');
-      fetchJobs(token!); 
+      if(token) fetchJobs(token); 
     } catch (err: any) {
       alert(err.response?.data?.msg || 'Application failed');
     } finally {
@@ -81,7 +84,7 @@ export default function StudentDashboard() {
         headers: { 'x-auth-token': token }
       });
       alert('Application Withdrawn.');
-      fetchJobs(token!);
+      if(token) fetchJobs(token);
     } catch (err) {
       alert("Failed to withdraw.");
     } finally {
@@ -98,7 +101,7 @@ export default function StudentDashboard() {
         headers: { 'x-auth-token': token }
       });
       alert('Congratulations! Offer Accepted.');
-      fetchJobs(token!);
+      if(token) fetchJobs(token);
     } catch (err: any) {
       alert(err.response?.data?.msg || "Failed to accept offer.");
     } finally {
@@ -120,44 +123,70 @@ export default function StudentDashboard() {
   if (loading) return <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white"><Loader2 className="w-10 h-10 animate-spin text-blue-500" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans relative">
+    <div className="min-h-screen bg-[#0f172a] text-white font-sans relative pb-20 md:pb-0">
+      {/* --- HEADER --- */}
       <header className="sticky top-0 z-50 bg-[#0f172a]/80 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center"><Briefcase className="text-white w-6 h-6" /></div>
-            <div><h1 className="text-lg font-bold leading-tight">JobNexus</h1><p className="text-xs text-blue-400 font-medium">Student Portal</p></div>
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-blue-600 flex items-center justify-center">
+                <Briefcase className="text-white w-5 h-5 md:w-6 md:h-6" />
+            </div>
+            <div>
+                <h1 className="text-base md:text-lg font-bold leading-tight">JobNexus</h1>
+                <p className="text-[10px] md:text-xs text-blue-400 font-medium">Student Portal</p>
+            </div>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-2 text-sm font-medium text-gray-300 bg-white/5 px-4 py-2 rounded-full border border-white/10"><User className="w-4 h-4" /><span>{userName}</span></div>
+          <div className="flex items-center gap-3 md:gap-6">
+            <div className="hidden md:flex items-center gap-2 text-sm font-medium text-gray-300 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+                <User className="w-4 h-4" /><span>{userName}</span>
+            </div>
             <button onClick={() => router.push('/settings')} className="p-2 rounded-lg bg-gray-500/10 text-gray-400 hover:bg-gray-500 hover:text-white transition" title="Settings">
               <SettingsIcon className="w-5 h-5" />
             </button>
-            <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition"><LogOut className="w-5 h-5" /></button>
+            <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition">
+                <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="text-center mb-16">
-          <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl md:text-5xl font-bold mb-6">Find Your Next <span className="text-blue-500">Opportunity</span></motion.h2>
+      {/* --- MAIN CONTENT --- */}
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
+        
+        {/* Hero Section */}
+        <div className="text-center mb-10 md:mb-16">
+          <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 leading-tight">
+            Find Your Next <span className="text-blue-500">Opportunity</span>
+          </motion.h2>
           <div className="relative max-w-2xl mx-auto group">
             <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition duration-500" />
-            <div className="relative flex items-center bg-white/5 border border-white/10 rounded-full px-6 py-4 backdrop-blur-sm focus-within:border-blue-500/50 transition-all">
-              <Search className="w-6 h-6 text-gray-400 mr-4" />
-              <input type="text" placeholder="Search by job title or company..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-transparent w-full text-lg placeholder-gray-500 focus:outline-none text-white"/>
+            <div className="relative flex items-center bg-white/5 border border-white/10 rounded-full px-4 md:px-6 py-3 md:py-4 backdrop-blur-sm focus-within:border-blue-500/50 transition-all">
+              <Search className="w-5 h-5 md:w-6 md:h-6 text-gray-400 mr-3 md:mr-4 flex-shrink-0" />
+              <input 
+                type="text" 
+                placeholder="Search job or company..." 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)} 
+                className="bg-transparent w-full text-base md:text-lg placeholder-gray-500 focus:outline-none text-white"
+              />
             </div>
           </div>
         </div>
 
-        <div className="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-6 mb-12 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div><h3 className="text-xl font-bold text-blue-400 mb-1">Step 1: Upload Your Resume</h3><p className="text-gray-400 text-sm">Select your PDF once, then apply to multiple jobs easily.</p></div>
-          <label className="flex items-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl cursor-pointer transition shadow-lg shadow-blue-500/20">
+        {/* Resume Upload Section */}
+        <div className="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-5 md:p-6 mb-8 md:mb-12 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 text-center md:text-left">
+          <div>
+            <h3 className="text-lg md:text-xl font-bold text-blue-400 mb-1">Step 1: Upload Your Resume</h3>
+            <p className="text-gray-400 text-xs md:text-sm">Select your PDF once, then apply to multiple jobs easily.</p>
+          </div>
+          <label className="w-full md:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl cursor-pointer transition shadow-lg shadow-blue-500/20 active:scale-95">
             <input type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} />
             {file ? <><CheckCircle2 className="w-5 h-5" />{file.name.slice(0, 15)}...</> : <><span className="text-xl">+</span> Select Resume PDF</>}
           </label>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Job Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {filteredJobs.map((job) => {
             const myApp = job.applicants.find((app: any) => app.studentId === currentUserId);
             const status = myApp ? myApp.status : null;
@@ -167,14 +196,14 @@ export default function StudentDashboard() {
             const interviewLink = myApp ? myApp.interviewLink : null;
 
             return (
-              <motion.div key={job._id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ y: -5 }} className={`bg-white/5 border rounded-2xl p-6 transition-all group ${status === 'Confirmed' ? 'border-amber-500/50 bg-amber-500/10' : 'border-white/10 hover:border-blue-500/30'}`}>
+              <motion.div key={job._id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ y: -5 }} className={`bg-white/5 border rounded-2xl p-5 md:p-6 transition-all group ${status === 'Confirmed' ? 'border-amber-500/50 bg-amber-500/10' : 'border-white/10 hover:border-blue-500/30'}`}>
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center"><Building2 className="w-6 h-6 text-gray-300" /></div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">{job.type || 'Full-time'}</span>
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 whitespace-nowrap">{job.type || 'Full-time'}</span>
                 </div>
-                <h3 className="text-xl font-bold mb-1 group-hover:text-blue-400 transition">{job.title}</h3>
-                <p className="text-gray-400 mb-4">{job.company}</p>
-                <div className="flex items-center gap-4 text-sm text-gray-400 mb-6">
+                <h3 className="text-xl font-bold mb-1 group-hover:text-blue-400 transition line-clamp-1">{job.title}</h3>
+                <p className="text-gray-400 mb-4 line-clamp-1">{job.company}</p>
+                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mb-6">
                   <div className="flex items-center gap-1"><MapPin className="w-4 h-4 text-gray-500" />{job.location}</div>
                   <div className="flex items-center gap-1"><Banknote className="w-4 h-4 text-gray-500" />{job.salary} LPA</div>
                 </div>
@@ -182,13 +211,13 @@ export default function StudentDashboard() {
                 {/* --- DYNAMIC BUTTONS --- */}
                 
                 {!hasApplied && (
-                  <button onClick={() => handleApply(job._id)} disabled={actionLoading === job._id} className="w-full py-3 rounded-xl font-bold bg-white text-black hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                  <button onClick={() => handleApply(job._id)} disabled={actionLoading === job._id} className="w-full py-3 rounded-xl font-bold bg-white text-black hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98]">
                     {actionLoading === job._id ? <Loader2 className="animate-spin" /> : 'Apply Now'}
                   </button>
                 )}
 
                 {status === 'Pending' && (
-                  <button onClick={() => handleWithdraw(job._id)} disabled={actionLoading === job._id} className="w-full py-3 rounded-xl font-bold bg-gray-500/20 text-gray-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2">
+                  <button onClick={() => handleWithdraw(job._id)} disabled={actionLoading === job._id} className="w-full py-3 rounded-xl font-bold bg-gray-500/20 text-gray-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
                     {actionLoading === job._id ? <Loader2 className="animate-spin" /> : <><Undo2 className="w-4 h-4"/> Withdraw</>}
                   </button>
                 )}
@@ -201,12 +230,12 @@ export default function StudentDashboard() {
                      </div>
                      {interviewDate && (
                        <div className="flex items-center gap-2 text-xs text-gray-300">
-                         <Calendar className="w-3 h-3" /> 
-                         {new Date(interviewDate).toLocaleString()}
+                         <Calendar className="w-3 h-3 flex-shrink-0" /> 
+                         <span>{new Date(interviewDate).toLocaleString()}</span>
                        </div>
                      )}
                      {interviewLink && (
-                       <a href={interviewLink} target="_blank" rel="noopener noreferrer" className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2 transition">
+                       <a href={interviewLink} target="_blank" rel="noopener noreferrer" className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2 transition active:scale-[0.98]">
                          Join Video Call
                        </a>
                      )}
@@ -216,7 +245,7 @@ export default function StudentDashboard() {
                 {status === 'Accepted' && (
                   <div className="space-y-2">
                     <div className="text-center text-xs text-emerald-400 font-bold uppercase tracking-wider">Offer Received!</div>
-                    <button onClick={() => handleFinalizeOffer(job._id)} disabled={actionLoading === job._id} className="w-full py-3 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 animate-pulse">
+                    <button onClick={() => handleFinalizeOffer(job._id)} disabled={actionLoading === job._id} className="w-full py-3 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 animate-pulse active:scale-[0.98]">
                       {actionLoading === job._id ? <Loader2 className="animate-spin" /> : <><PartyPopper className="w-4 h-4"/> Accept Offer</>}
                     </button>
                   </div>
@@ -240,7 +269,7 @@ export default function StudentDashboard() {
                       Rejected
                     </div>
                     {feedback && (
-                      <button onClick={() => openFeedback(feedback)} className="w-full py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 flex items-center justify-center gap-1 transition">
+                      <button onClick={() => openFeedback(feedback)} className="w-full py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 flex items-center justify-center gap-1 transition active:scale-[0.98]">
                         <MessageCircle className="w-3 h-3" /> View Reason
                       </button>
                     )}
@@ -266,13 +295,13 @@ export default function StudentDashboard() {
                 <h3 className="text-lg font-bold text-white">Application Feedback</h3>
               </div>
               
-              <div className="bg-black/20 rounded-lg p-4 border border-white/5 text-gray-300 italic mb-6 text-sm">
+              <div className="bg-black/20 rounded-lg p-4 border border-white/5 text-gray-300 italic mb-6 text-sm max-h-60 overflow-y-auto">
                 "{feedbackModal.message}"
               </div>
 
               <button 
                 onClick={() => setFeedbackModal({ ...feedbackModal, isOpen: false })} 
-                className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg transition"
+                className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg transition active:scale-[0.98]"
               >
                 Close
               </button>

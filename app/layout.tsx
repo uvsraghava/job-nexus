@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
@@ -10,6 +10,13 @@ export const metadata: Metadata = {
   description: "Connect students, recruiters, and faculty in one unified platform.",
 };
 
+// CRITICAL: Ensures the app scales correctly on mobile devices
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#0f172a', // Matches your background color for a native app feel
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -17,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-[#0f172a]`}>
         {children}
       </body>
     </html>
