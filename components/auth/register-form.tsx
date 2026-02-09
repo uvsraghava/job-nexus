@@ -1,8 +1,9 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import axios from "axios"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,119 +17,89 @@ type Role = "student" | "recruiter" | "faculty"
 export function RegisterForm() {
   const [role, setRole] = useState<Role>("student")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const router = useRouter()
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
-    setTimeout(() => setLoading(false), 1000)
+    setError("")
+
+    const formData = new FormData(e.currentTarget)
+    const name = formData.get("name")
+    const email = formData.get("email")
+    const password = formData.get("password")
+
+    try {
+      console.log("Attempting Local Register for:", email);
+
+      // ⚠️ HARDCODED LOCALHOST URL
+      const res = await axios.post("https://job-nexus-f3ub.onrender.com/api/auth/register", {
+        name,
+        email,
+        password,
+        role
+      })
+
+      console.log("Register Success:", res.data);
+      
+      localStorage.setItem("token", res.data.token)
+      localStorage.setItem("role", res.data.user.role)
+      localStorage.setItem("name", res.data.user.name || "User")
+
+      if (res.data.user.role === "faculty") router.push("/dashboard/faculty")
+      else if (res.data.user.role === "recruiter") router.push("/dashboard/recruiter")
+      else router.push("/dashboard/student")
+
+    } catch (err: any) {
+      console.error("Register Error:", err)
+      setError(err.response?.data?.msg || "Registration failed. Is Local Backend (5001) running?")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <Card className="glass-card transition-all">
-      <CardHeader>
-        <CardTitle className="text-pretty">Create your account</CardTitle>
-      </CardHeader>
+      <CardHeader><CardTitle>Create Account</CardTitle></CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-4">
-          {/* Role selection */}
+          {error && <div className="text-red-500 text-sm font-bold text-center">{error}</div>}
+
+          {/* Role Selection */}
           <div className="grid gap-2">
-            <Label className="text-sm">I am a</Label>
+            <Label>I am a</Label>
             <RadioGroup value={role} onValueChange={(v: Role) => setRole(v)} className="grid gap-2 md:grid-cols-3">
               <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3 hover:bg-muted/50">
-                <RadioGroupItem value="student" id="role-student" />
-                <GraduationCap className="h-4 w-4 text-primary" aria-hidden />
-                <span className="text-sm">Student</span>
+                <RadioGroupItem value="student" /> <GraduationCap className="h-4 w-4" /> <span className="text-sm">Student</span>
               </label>
               <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3 hover:bg-muted/50">
-                <RadioGroupItem value="recruiter" id="role-recruiter" />
-                <Briefcase className="h-4 w-4 text-primary" aria-hidden />
-                <span className="text-sm">Recruiter</span>
+                <RadioGroupItem value="recruiter" /> <Briefcase className="h-4 w-4" /> <span className="text-sm">Recruiter</span>
               </label>
               <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3 hover:bg-muted/50">
-                <RadioGroupItem value="faculty" id="role-faculty" />
-                <ShieldCheck className="h-4 w-4 text-primary" aria-hidden />
-                <span className="text-sm">Faculty</span>
+                <RadioGroupItem value="faculty" /> <ShieldCheck className="h-4 w-4" /> <span className="text-sm">Faculty</span>
               </label>
             </RadioGroup>
           </div>
 
-          {/* Common fields */}
           <div className="grid gap-2">
-            <Label htmlFor="name" className="text-sm">
-              Full name
-            </Label>
-            <div className="relative">
-              <User
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden
-              />
-              <Input id="name" placeholder="Alex Johnson" className="pl-9" required />
-            </div>
+            <Label htmlFor="name">Full Name</Label>
+            <Input name="name" id="name" placeholder="John Doe" required />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="email" className="text-sm">
-              Email
-            </Label>
-            <div className="relative">
-              <Mail
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden
-              />
-              <Input id="email" type="email" placeholder="you@college.edu" className="pl-9" required />
-            </div>
+            <Label htmlFor="email">Email</Label>
+            <Input name="email" id="email" type="email" placeholder="local@college.edu" required />
           </div>
-
-          {/* Conditional org field */}
-          {role === "recruiter" && (
-            <div className="grid gap-2">
-              <Label htmlFor="company" className="text-sm">
-                Company
-              </Label>
-              <Input id="company" placeholder="TechDept Inc." />
-            </div>
-          )}
-          {role === "faculty" && (
-            <div className="grid gap-2">
-              <Label htmlFor="dept" className="text-sm">
-                Department
-              </Label>
-              <Input id="dept" placeholder="Computer Science" />
-            </div>
-          )}
-
-          <div className="grid gap-2 md:grid-cols-2">
-            <div className="relative">
-              <Label htmlFor="password" className="text-sm">
-                Password
-              </Label>
-              <div className="relative">
-                <Lock
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden
-                />
-                <Input id="password" type="password" placeholder="••••••••" className="pl-9" required />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="confirm" className="text-sm">
-                Confirm password
-              </Label>
-              <Input id="confirm" type="password" placeholder="••••••••" required />
-            </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input name="password" id="password" type="password" required />
           </div>
-
-          <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-            <Checkbox id="terms" required /> I agree to the Terms and Privacy Policy
-          </label>
-
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Creating account..." : "Create Account"}
-          </Button>
-          <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <a href="/login" className="text-primary underline-offset-4 hover:underline">
-              Sign in
-            </a>
+          
+          <Button type="submit" disabled={loading} className="w-full bg-red-600">
+   TESTING LOCALHOST 123
+</Button>
+          <p className="text-center text-sm text-gray-400">
+            Have an account? <a href="/login" className="text-blue-400 hover:underline">Sign in</a>
           </p>
         </form>
       </CardContent>

@@ -6,10 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Briefcase, Users, FileText, Check, X, LogOut, 
   MapPin, Banknote, Calendar, ChevronDown, ChevronUp, Loader2, Plus, X as CloseIcon, BarChart3, Trash2,
-  Settings as SettingsIcon, PartyPopper, Trophy, UserCheck, MessageSquare, Video
+  Settings as SettingsIcon, PartyPopper, Trophy, UserCheck, MessageSquare, Video, ShieldCheck, Sparkles
 } from 'lucide-react';
 import { 
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer 
 } from 'recharts';
 
 export default function RecruiterDashboard() {
@@ -26,7 +26,10 @@ export default function RecruiterDashboard() {
   const [showInterviewModal, setShowInterviewModal] = useState(false); 
 
   const [posting, setPosting] = useState(false);
-  const [newJob, setNewJob] = useState({ title: '', company: '', location: '', salary: '', description: '', type: 'Full-time' });
+  const [newJob, setNewJob] = useState({ 
+    title: '', company: '', location: '', salary: '', description: '', type: 'Full-time', 
+    jobPolicy: 'Exclusive' 
+  });
   const [chartData, setChartData] = useState<any[]>([]);
 
   // --- ACTION DATA ---
@@ -95,14 +98,12 @@ export default function RecruiterDashboard() {
     interviewLink: string = ""
   ) => {
     
-    // 1. REJECTION FLOW
     if (status === 'Rejected' && !feedback && !showRejectModal) {
       setRejectData({ jobId, studentId, feedback: '' });
       setShowRejectModal(true);
       return;
     }
 
-    // 2. INTERVIEW FLOW
     if (status === 'Interview Scheduled' && !interviewLink && !showInterviewModal) {
       setInterviewData({ jobId, studentId, date: '', link: '' });
       setShowInterviewModal(true);
@@ -154,7 +155,7 @@ export default function RecruiterDashboard() {
       await axios.post('https://job-nexus-f3ub.onrender.com/api/jobs', newJob, {
         headers: { 'x-auth-token': token }
       });
-      setNewJob({ title: '', company: '', location: '', salary: '', description: '', type: 'Full-time' });
+      setNewJob({ title: '', company: '', location: '', salary: '', description: '', type: 'Full-time', jobPolicy: 'Exclusive' });
       setShowPostModal(false);
       if(token) fetchMyJobs(token);
     } catch (err: any) {
@@ -187,7 +188,7 @@ export default function RecruiterDashboard() {
   return (
     <div className="min-h-screen bg-[#0f172a] text-white font-sans relative pb-20 md:pb-0">
       
-      {/* --- HEADER --- */}
+      {/* HEADER */}
       <header className="sticky top-0 z-50 bg-[#0f172a]/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -213,10 +214,9 @@ export default function RecruiterDashboard() {
         </div>
       </header>
 
-      {/* --- MAIN CONTENT --- */}
       <main className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-12">
         
-        {/* --- TOP STATS --- */}
+        {/* STATS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8 md:mb-10">
            {chartData.length > 0 && (
             <div className="p-4 md:p-6 rounded-2xl bg-white/5 border border-white/10">
@@ -244,7 +244,7 @@ export default function RecruiterDashboard() {
           </div>
         </div>
 
-        {/* --- JOINED SECTION --- */}
+        {/* JOINED TABLE */}
         {joinedCandidates.length > 0 && (
           <div className="mb-8 md:mb-12">
             <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-white">
@@ -284,13 +284,20 @@ export default function RecruiterDashboard() {
           </button>
         </div>
 
-        {/* JOB LISTINGS */}
         <div className="space-y-4 md:space-y-6">
           {jobs.map((job) => (
             <motion.div key={job._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
               <div onClick={() => toggleJob(job._id)} className="p-5 md:p-6 cursor-pointer hover:bg-white/5 transition flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-lg md:text-xl font-bold mb-2">{job.title}</h3>
+                  <h3 className="text-lg md:text-xl font-bold mb-2 flex items-center gap-2">
+                      {job.title}
+                      {/* POLICY BADGE */}
+                      {job.jobPolicy === 'Exclusive' ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] bg-red-500/20 text-red-400 border border-red-500/20 font-bold uppercase tracking-wide">Strict</span>
+                      ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/20 font-bold uppercase tracking-wide">Open</span>
+                      )}
+                  </h3>
                   <div className="flex items-center gap-4 text-xs md:text-sm text-gray-400">
                     <span className="flex items-center gap-1"><MapPin className="w-3 h-3 md:w-4 md:h-4" /> {job.location}</span>
                     <span className="flex items-center gap-1"><Banknote className="w-3 h-3 md:w-4 md:h-4" /> {job.salary} LPA</span>
@@ -314,11 +321,7 @@ export default function RecruiterDashboard() {
                       {job.applicants.length === 0 ? <div className="text-center py-8 text-gray-500 italic">No applications yet.</div> : (
                         <div className="space-y-3">
                           {job.applicants.map((app: any, index: number) => {
-                            
-                            // --- NEW LOGIC: DETERMINE RESUME URL ---
-                            const resumeUrl = app.resume?.startsWith('http') 
-                              ? app.resume 
-                              : `https://job-nexus-f3ub.onrender.com/${app.resume}`;
+                            const resumeUrl = app.resume?.startsWith('http') ? app.resume : `https://job-nexus-f3ub.onrender.com/${app.resume}`;
 
                             return (
                               <div key={index} className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5 hover:border-purple-500/30 transition gap-4">
@@ -329,35 +332,51 @@ export default function RecruiterDashboard() {
                                     <div className="text-xs md:text-sm text-gray-400 truncate">{app.email}</div>
                                   </div>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-3 md:gap-4 w-full md:w-auto justify-between md:justify-end">
+
+                                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto md:items-center justify-end">
                                   
-                                  {/* --- RESUME LINK (UPDATED) --- */}
-                                  <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition"><FileText className="w-4 h-4" /> Resume</a>
-                                  
-                                  {app.status === 'Pending' && (
-                                    <div className="flex items-center gap-2">
-                                      <button onClick={() => handleStatusUpdate(job._id, app.studentId, 'Interview Scheduled')} disabled={!!actionLoading} className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white transition active:scale-95" title="Schedule Interview">
-                                        {actionLoading === `${job._id}-${app.studentId}-Interview Scheduled` ? <Loader2 className="w-4 h-4 animate-spin"/> : <Video className="w-4 h-4" />}
-                                      </button>
-                                      <button onClick={() => handleStatusUpdate(job._id, app.studentId, 'Rejected')} disabled={!!actionLoading} className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition active:scale-95" title="Reject">
-                                        {actionLoading === `${job._id}-${app.studentId}-Rejected` ? <Loader2 className="w-4 h-4 animate-spin"/> : <X className="w-4 h-4" />}
-                                      </button>
-                                    </div>
+                                  {/* --- AI SCORE DISPLAY (AUTO-POPULATED) --- */}
+                                  {app.aiScore !== null && app.aiScore !== undefined ? (
+                                      <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                                          <div className="text-center border-r border-indigo-500/20 pr-3 mr-1">
+                                              <div className="text-[10px] text-indigo-300 uppercase font-bold flex items-center gap-1"><Sparkles className="w-3 h-3"/> Resume</div>
+                                              <div className={`text-lg font-bold ${app.aiScore > 75 ? 'text-emerald-400' : app.aiScore > 50 ? 'text-amber-400' : 'text-red-400'}`}>{app.aiScore}%</div>
+                                          </div>
+                                          <div className="text-[10px] text-gray-300 italic max-w-[150px] line-clamp-2">
+                                              "{app.aiFeedback}"
+                                          </div>
+                                      </div>
+                                  ) : (
+                                      <span className="text-xs text-gray-500 italic px-2">No AI Score</span>
                                   )}
 
-                                  {app.status === 'Interview Scheduled' && (
-                                     <div className="flex flex-wrap items-center gap-2">
-                                       <span className="px-3 py-1 rounded-full text-xs font-bold border bg-indigo-500/10 text-indigo-400 border-indigo-500/20 flex items-center gap-1">Set <Video className="w-3 h-3"/></span>
-                                       <button onClick={() => handleStatusUpdate(job._id, app.studentId, 'Accepted')} className="p-1.5 px-3 rounded-md bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition text-xs font-bold active:scale-95">Hire</button>
-                                       {/* --- REJECT BUTTON FOR INTERVIEW STAGE --- */}
-                                       <button onClick={() => handleStatusUpdate(job._id, app.studentId, 'Rejected')} className="p-1.5 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition text-xs font-bold active:scale-95" title="Reject Candidate"><X className="w-4 h-4" /></button>
-                                     </div>
-                                  )}
+                                  <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition whitespace-nowrap"><FileText className="w-4 h-4" /> Resume</a>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    {app.status === 'Pending' && (
+                                        <>
+                                        <button onClick={() => handleStatusUpdate(job._id, app.studentId, 'Interview Scheduled')} disabled={!!actionLoading} className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white transition active:scale-95" title="Schedule Interview">
+                                            {actionLoading === `${job._id}-${app.studentId}-Interview Scheduled` ? <Loader2 className="w-4 h-4 animate-spin"/> : <Video className="w-4 h-4" />}
+                                        </button>
+                                        <button onClick={() => handleStatusUpdate(job._id, app.studentId, 'Rejected')} disabled={!!actionLoading} className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition active:scale-95" title="Reject">
+                                            {actionLoading === `${job._id}-${app.studentId}-Rejected` ? <Loader2 className="w-4 h-4 animate-spin"/> : <X className="w-4 h-4" />}
+                                        </button>
+                                        </>
+                                    )}
 
-                                  {app.status === 'Accepted' && <span className="px-3 py-1 rounded-full text-xs font-bold border bg-emerald-500/10 text-emerald-400 border-emerald-500/20 flex items-center gap-1">Offer Sent <Check className="w-3 h-3"/></span>}
-                                  {app.status === 'Confirmed' && <span className="px-3 py-1 rounded-full text-xs font-bold border bg-amber-500/20 text-amber-400 border-amber-500/20 flex items-center gap-2 animate-pulse"><PartyPopper className="w-3 h-3"/> Joined!</span>}
-                                  {app.status.includes('Withdrawn') && <span className="px-3 py-1 rounded-full text-xs font-bold border bg-gray-500/10 text-gray-500 border-gray-500/20">Withdrawn</span>}
-                                  {app.status === 'Rejected' && <span className="px-3 py-1 rounded-full text-xs font-bold border bg-red-500/10 text-red-500 border-red-500/20">Rejected</span>}
+                                    {app.status === 'Interview Scheduled' && (
+                                        <div className="flex items-center gap-2">
+                                        <span className="px-3 py-1 rounded-full text-xs font-bold border bg-indigo-500/10 text-indigo-400 border-indigo-500/20 flex items-center gap-1">Set <Video className="w-3 h-3"/></span>
+                                        <button onClick={() => handleStatusUpdate(job._id, app.studentId, 'Accepted')} className="p-1.5 px-3 rounded-md bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition text-xs font-bold active:scale-95">Hire</button>
+                                        <button onClick={() => handleStatusUpdate(job._id, app.studentId, 'Rejected')} className="p-1.5 rounded-md bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition text-xs font-bold active:scale-95" title="Reject Candidate"><X className="w-4 h-4" /></button>
+                                        </div>
+                                    )}
+
+                                    {app.status === 'Accepted' && <span className="px-3 py-1 rounded-full text-xs font-bold border bg-emerald-500/10 text-emerald-400 border-emerald-500/20 flex items-center gap-1">Offer Sent <Check className="w-3 h-3"/></span>}
+                                    {app.status === 'Confirmed' && <span className="px-3 py-1 rounded-full text-xs font-bold border bg-amber-500/20 text-amber-400 border-amber-500/20 flex items-center gap-2 animate-pulse"><PartyPopper className="w-3 h-3"/> Joined!</span>}
+                                    {app.status.includes('Withdrawn') && <span className="px-3 py-1 rounded-full text-xs font-bold border bg-gray-500/10 text-gray-500 border-gray-500/20">Withdrawn</span>}
+                                    {app.status === 'Rejected' && <span className="px-3 py-1 rounded-full text-xs font-bold border bg-red-500/10 text-red-500 border-red-500/20">Rejected</span>}
+                                  </div>
 
                                 </div>
                               </div>
@@ -373,8 +392,8 @@ export default function RecruiterDashboard() {
           ))}
         </div>
       </main>
-
-      {/* --- MODALS (POST, REJECT, INTERVIEW) --- */}
+      
+      {/* ... (Post Modal, Reject Modal, Interview Modal code remains unchanged) ... */}
       <AnimatePresence>
         {showPostModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -391,6 +410,27 @@ export default function RecruiterDashboard() {
                   <div><label className="text-xs text-gray-400 uppercase font-bold">Location</label><input type="text" required placeholder="e.g. Remote" value={newJob.location} onChange={e => setNewJob({...newJob, location: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"/></div>
                   <div><label className="text-xs text-gray-400 uppercase font-bold">Type</label><select value={newJob.type} onChange={e => setNewJob({...newJob, type: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"><option value="Full-time">Full-time</option><option value="Internship">Internship</option><option value="Part-time">Part-time</option></select></div>
                 </div>
+                
+                {/* --- UPDATED: POLICY DROPDOWN --- */}
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <div className="flex items-center gap-2 mb-2 text-blue-400 font-bold text-sm">
+                        <ShieldCheck className="w-4 h-4" /> Hiring Policy (Fair Play)
+                    </div>
+                    <select 
+                      value={newJob.jobPolicy} 
+                      onChange={e => setNewJob({...newJob, jobPolicy: e.target.value})} 
+                      className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="Exclusive">Strict (Locks Student after Joining)</option>
+                      <option value="Open">Flexible (Student can upgrade offer)</option>
+                    </select>
+                    <p className="text-[10px] text-gray-400 mt-2">
+                        {newJob.jobPolicy === 'Exclusive' 
+                            ? "Students who join this job will be withdrawn from all other active applications." 
+                            : "Students can join this job but may leave if they receive a better offer later."}
+                    </p>
+                </div>
+
                 <div><label className="text-xs text-gray-400 uppercase font-bold">Description</label><textarea rows={4} required placeholder="Job details..." value={newJob.description} onChange={e => setNewJob({...newJob, description: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500"/></div>
                 <button type="submit" disabled={posting} className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg flex items-center justify-center gap-2 active:scale-95">{posting ? <Loader2 className="animate-spin" /> : 'Publish Job'}</button>
               </form>
@@ -398,7 +438,6 @@ export default function RecruiterDashboard() {
           </div>
         )}
       </AnimatePresence>
-
       <AnimatePresence>
         {showRejectModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -417,7 +456,6 @@ export default function RecruiterDashboard() {
           </div>
         )}
       </AnimatePresence>
-
       <AnimatePresence>
         {showInterviewModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

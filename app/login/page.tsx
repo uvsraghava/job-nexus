@@ -20,9 +20,13 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // 1. Send Login Request
+      console.log("Attempting Login on Port 5001...");
+      
+      // ⚠️ FIX: Changed from Render URL to Localhost URL
       const res = await axios.post('https://job-nexus-f3ub.onrender.com/api/auth/login', { email, password });
       
+      console.log("Login Success:", res.data);
+
       // 2. Save Data to Browser
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('role', res.data.user.role);
@@ -35,7 +39,9 @@ export default function Login() {
       
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.msg || 'Login failed. Please check credentials.');
+      // Improved error message
+      const msg = err.response?.data?.msg || 'Login failed. Is Local Backend (5001) running?';
+      setError(msg);
       setLoading(false);
     }
   };
@@ -68,8 +74,8 @@ export default function Login() {
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
           
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-gray-400">Enter your credentials to access your dashboard.</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Login</h1>
+            <p className="text-gray-400">Enter credentials</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">

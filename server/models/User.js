@@ -19,16 +19,38 @@ const UserSchema = new mongoose.Schema({
     enum: ['student', 'recruiter', 'faculty'],
     required: true
   },
-  // --- NEW FIELD: Approval Status ---
+  
+  // --- NEW: GLOBAL RESUME FIELDS ---
+  // These fields store the student's active resume and its AI quality score.
+  resume: {
+    type: String, // Stores local path: "uploads/filename.pdf"
+    default: null
+  },
+  resumeScore: {
+    type: Number, // 0-100 Score based on resume quality/strength
+    default: null
+  },
+  resumeFeedback: {
+    type: String, // One-line summary of WHY the score is what it is
+    default: null
+  },
+
+  // --- UPDATED FIELD: Approval Status ---
   isApproved: {
     type: Boolean,
     default: function() {
-      // Logic: Recruiters & Faculty are auto-approved (true)
-      // Students need approval (false)
-      if (this.role === 'recruiter' || this.role === 'faculty') {
+      // 1. Recruiters are auto-approved
+      if (this.role === 'recruiter') {
         return true;
       }
-      return false; // Students default to false
+      
+      // 2. SAFETY NET: Master Faculty Auto-Approve
+      if (this.email === 'drssm@gmail.com' || this.role === 'master-admin') {
+         return true; 
+      }
+
+      // 3. Students AND Faculty default to FALSE (Need Approval)
+      return false; 
     }
   },
   createdAt: {

@@ -13,7 +13,7 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('student'); // Default role
+  const [role, setRole] = useState('student');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -24,19 +24,24 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // Note: Port is set to 5001 explicitly
-      await axios.post('https://job-nexus-f3ub.onrender.com/api/auth/register', {
+      console.log("Attempting Local Registration on Port 5001...");
+      
+      // ⚠️ FIX: Changed to Localhost so it talks to your running backend
+      const res = await axios.post('https://job-nexus-f3ub.onrender.com/api/auth/register', {
         name,
         email,
         password,
         role
       });
       
-      // Redirect to Login on success
+      console.log("Registration Success:", res.data);
+      // Optional: Auto-login logic can go here, but redirecting to login is safer
       router.push('/login');
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.msg || 'Registration failed. Try again.');
+      // Improved error message to help you debug
+      const msg = err.response?.data?.msg || 'Connection Failed. Is Local Backend (Port 5001) running?';
+      setError(msg);
       setLoading(false);
     }
   };
@@ -44,7 +49,6 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4 relative overflow-hidden">
       
-      {/* --- NEW: Back to Home Button --- */}
       <div className="absolute top-6 left-6 z-50">
         <Link 
           href="/" 
@@ -55,7 +59,6 @@ export default function Register() {
         </Link>
       </div>
 
-      {/* --- BACKGROUND GLOW --- */}
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-emerald-600/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
 
@@ -69,7 +72,7 @@ export default function Register() {
           
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-            <p className="text-gray-400">Join the platform as a Student, Recruiter, or Faculty.</p>
+            <p className="text-gray-400">Join the platform</p>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-6">
@@ -161,7 +164,7 @@ export default function Register() {
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" /> Creating Account...
+                  <Loader2 className="w-5 h-5 animate-spin" /> Creating Local Account...
                 </>
               ) : (
                 <>
@@ -171,7 +174,6 @@ export default function Register() {
             </button>
           </form>
 
-          {/* FOOTER */}
           <div className="mt-8 pt-6 border-t border-white/10 text-center">
             <p className="text-gray-400 text-sm">
               Already have an account?{' '}

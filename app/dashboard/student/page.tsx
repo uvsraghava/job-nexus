@@ -6,19 +6,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, MapPin, Building2, Banknote, 
   Briefcase, LogOut, User, CheckCircle2, Loader2, Undo2,
-  Settings as SettingsIcon, PartyPopper, AlertCircle, MessageCircle, Video, Calendar
+  Settings as SettingsIcon, PartyPopper, AlertCircle, MessageCircle, Video, Calendar, ShieldCheck, 
+  Sparkles, UploadCloud, FileText
 } from 'lucide-react';
 
 export default function StudentDashboard() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  
+  // --- RESUME & AI STATE ---
   const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [resumeStats, setResumeStats] = useState<{ score: number | null, feedback: string | null }>({ score: null, feedback: null });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [userName, setUserName] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
   
-  // --- MODALS STATE ---
   const [feedbackModal, setFeedbackModal] = useState<{ isOpen: boolean, message: string }>({ isOpen: false, message: '' });
 
   const router = useRouter();
@@ -41,12 +46,10 @@ export default function StudentDashboard() {
       const res = await axios.get('https://job-nexus-f3ub.onrender.com/api/jobs', {
         headers: { 'x-auth-token': token }
       });
-      // Safety check for token structure
       if(token.split('.').length > 1) {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setCurrentUserId(payload.user.id);
       }
-      
       setJobs(res.data);
       setLoading(false);
     } catch (err) {
@@ -55,16 +58,71 @@ export default function StudentDashboard() {
     }
   };
 
-  const handleApply = async (jobId: string) => {
-    if (!file) { alert('Please select a resume (PDF) first!'); return; }
+  // --- [FIXED] GLOBAL UPLOAD & ANALYZE HANDLER ---
+  const handleUploadAndAnalyze = async () => {
+    if (!file) return alert("Please select a PDF file first.");
+    
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('resume', file);
+
+    try {
+        const token = localStorage.getItem('token');
+        
+        // [CRITICAL FIX] Removed manual 'Content-Type' header
+        // Axios handles boundary automatically for FormData
+        const res = await axios.post('https://job-nexus-f3ub.onrender.com/api/auth/upload-resume', formData, {
+            headers: { 
+                'x-auth-token': token 
+            }
+        });
+
+        // Set the Global Score immediately
+        setResumeStats({
+            score: res.data.score,
+            feedback: res.data.feedback
+        });
+
+        alert("Resume Uploaded & Scored Successfully!");
+    } catch (err: any) {
+        console.error("Upload Error:", err);
+        alert(err.response?.data?.msg || "Upload failed. Please try again.");
+    } finally {
+        setUploading(false);
+    }
+  };
+
+  const getJoinedJob = () => {
+    return jobs.find(j => 
+      j.applicants.some((app: any) => app.studentId === currentUserId && app.status === 'Confirmed')
+    );
+  };
+
+  const handleApply = async (jobId: string, jobPolicy: string, companyName: string) => {
+    // We still require a file to be selected for the specific application
+    if (!file) { alert('Please confirm your resume selection above first!'); return; }
+    
+    const joinedJob = getJoinedJob();
+    if (joinedJob && jobPolicy === 'Exclusive') {
+       const confirmed = confirm(
+         `⚠️ Important Notice\n\n` +
+         `You have already joined '${joinedJob.company}'.\n` +
+         `This new position at '${companyName}' is an EXCLUSIVE POLICY role.\n\n` +
+         `If you get selected and accept this offer, your current position at '${joinedJob.company}' will be AUTOMATICALLY FORFEITED.\n\n` +
+         `Do you wish to proceed?`
+       );
+       if (!confirmed) return;
+    }
+
     setActionLoading(jobId);
     const formData = new FormData();
     formData.append('resume', file);
 
     try {
       const token = localStorage.getItem('token');
+      // [FIXED] Removed manual Content-Type here too for consistency
       await axios.post(`https://job-nexus-f3ub.onrender.com/api/jobs/${jobId}/apply`, formData, {
-        headers: { 'x-auth-token': token, 'Content-Type': 'multipart/form-data' }
+        headers: { 'x-auth-token': token }
       });
       alert('Application Successful!');
       if(token) fetchJobs(token); 
@@ -93,7 +151,7 @@ export default function StudentDashboard() {
   };
 
   const handleFinalizeOffer = async (jobId: string) => {
-    if(!confirm("Are you sure? Accepting this offer will automatically WITHDRAW you from all other applications. This is final.")) return;
+    if(!confirm("Are you sure? Accepting this offer will automatically WITHDRAW you from all other applications (Smart Revert).")) return;
     setActionLoading(jobId);
     try {
       const token = localStorage.getItem('token');
@@ -124,7 +182,8 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white font-sans relative pb-20 md:pb-0">
-      {/* --- HEADER --- */}
+      
+      {/* HEADER */}
       <header className="sticky top-0 z-50 bg-[#0f172a]/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -150,11 +209,10 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      {/* --- MAIN CONTENT --- */}
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
         
-        {/* Hero Section */}
-        <div className="text-center mb-10 md:mb-16">
+        {/* --- HERO & SEARCH --- */}
+        <div className="text-center mb-10 md:mb-10">
           <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 leading-tight">
             Find Your Next <span className="text-blue-500">Opportunity</span>
           </motion.h2>
@@ -173,19 +231,72 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Resume Upload Section */}
-        <div className="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-5 md:p-6 mb-8 md:mb-12 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 text-center md:text-left">
-          <div>
-            <h3 className="text-lg md:text-xl font-bold text-blue-400 mb-1">Step 1: Upload Your Resume</h3>
-            <p className="text-gray-400 text-xs md:text-sm">Select your PDF once, then apply to multiple jobs easily.</p>
-          </div>
-          <label className="w-full md:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl cursor-pointer transition shadow-lg shadow-blue-500/20 active:scale-95">
-            <input type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} />
-            {file ? <><CheckCircle2 className="w-5 h-5" />{file.name.slice(0, 15)}...</> : <><span className="text-xl">+</span> Select Resume PDF</>}
-          </label>
+        {/* --- RESUME UPLOAD & SCORE SECTION --- */}
+        <div className="mb-12 bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/20 rounded-3xl p-6 md:p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                <Sparkles className="w-40 h-40 text-white"/>
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-8 items-start md:items-center relative z-10">
+                {/* Left: Upload Control */}
+                <div className="flex-1 w-full md:w-auto">
+                    <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                        <UploadCloud className="text-blue-400"/> Upload Resume
+                    </h3>
+                    <p className="text-gray-400 mb-6 text-sm">
+                        Upload your latest PDF. Our AI will analyze your profile strength instantly.
+                    </p>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <label className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-white/5 border border-white/10 hover:border-blue-500/50 rounded-xl cursor-pointer transition group">
+                            <input type="file" accept=".pdf" className="hidden" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} />
+                            <FileText className={`w-6 h-6 ${file ? 'text-emerald-400' : 'text-gray-400 group-hover:text-white'}`} />
+                            <span className={`font-medium ${file ? 'text-emerald-400' : 'text-gray-300 group-hover:text-white'}`}>
+                                {file ? file.name.slice(0, 20) + "..." : "Select PDF File"}
+                            </span>
+                        </label>
+
+                        <button 
+                            onClick={handleUploadAndAnalyze} 
+                            disabled={uploading || !file}
+                            className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20"
+                        >
+                            {uploading ? <Loader2 className="animate-spin"/> : <Sparkles className="w-5 h-5"/>}
+                            {uploading ? "Analyzing..." : "Upload & Score"}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Right: AI Score Result (Conditional) */}
+                <AnimatePresence>
+                    {resumeStats.score !== null && (
+                        <motion.div 
+                            initial={{ opacity: 0, x: 20 }} 
+                            animate={{ opacity: 1, x: 0 }} 
+                            className="flex-1 w-full md:w-auto bg-black/30 border border-white/10 rounded-2xl p-6 backdrop-blur-md"
+                        >
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Resume Strength</span>
+                                <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded">AI Generated</span>
+                            </div>
+                            
+                            <div className="flex items-end gap-3 mb-3">
+                                <span className={`text-5xl font-black ${resumeStats.score > 75 ? 'text-emerald-400' : resumeStats.score > 50 ? 'text-amber-400' : 'text-red-400'}`}>
+                                    {resumeStats.score}%
+                                </span>
+                                <span className="text-sm text-gray-400 mb-1">/ 100</span>
+                            </div>
+
+                            <p className="text-sm text-gray-300 italic border-l-2 border-white/20 pl-3">
+                                "{resumeStats.feedback}"
+                            </p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
 
-        {/* Job Grid */}
+        {/* --- JOB GRID --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {filteredJobs.map((job) => {
             const myApp = job.applicants.find((app: any) => app.studentId === currentUserId);
@@ -199,7 +310,12 @@ export default function StudentDashboard() {
               <motion.div key={job._id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ y: -5 }} className={`bg-white/5 border rounded-2xl p-5 md:p-6 transition-all group ${status === 'Confirmed' ? 'border-amber-500/50 bg-amber-500/10' : 'border-white/10 hover:border-blue-500/30'}`}>
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center"><Building2 className="w-6 h-6 text-gray-300" /></div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 whitespace-nowrap">{job.type || 'Full-time'}</span>
+                  <div className="flex flex-col items-end gap-1">
+                      <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20 whitespace-nowrap">{job.type || 'Full-time'}</span>
+                      {job.jobPolicy === 'Exclusive' && (
+                          <span className="flex items-center gap-1 text-[10px] text-red-400 font-bold bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20"><ShieldCheck className="w-3 h-3"/> Strict</span>
+                      )}
+                  </div>
                 </div>
                 <h3 className="text-xl font-bold mb-1 group-hover:text-blue-400 transition line-clamp-1">{job.title}</h3>
                 <p className="text-gray-400 mb-4 line-clamp-1">{job.company}</p>
@@ -208,10 +324,8 @@ export default function StudentDashboard() {
                   <div className="flex items-center gap-1"><Banknote className="w-4 h-4 text-gray-500" />{job.salary} LPA</div>
                 </div>
 
-                {/* --- DYNAMIC BUTTONS --- */}
-                
                 {!hasApplied && (
-                  <button onClick={() => handleApply(job._id)} disabled={actionLoading === job._id} className="w-full py-3 rounded-xl font-bold bg-white text-black hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98]">
+                  <button onClick={() => handleApply(job._id, job.jobPolicy, job.company)} disabled={actionLoading === job._id} className="w-full py-3 rounded-xl font-bold bg-white text-black hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98]">
                     {actionLoading === job._id ? <Loader2 className="animate-spin" /> : 'Apply Now'}
                   </button>
                 )}
@@ -222,7 +336,6 @@ export default function StudentDashboard() {
                   </button>
                 )}
 
-                {/* --- NEW: INTERVIEW CARD --- */}
                 {status === 'Interview Scheduled' && (
                   <div className="w-full p-4 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex flex-col gap-3">
                      <div className="flex items-center gap-2 text-indigo-300 font-bold text-sm">
@@ -282,7 +395,6 @@ export default function StudentDashboard() {
         </div>
       </main>
 
-      {/* --- FEEDBACK MODAL --- */}
       <AnimatePresence>
         {feedbackModal.isOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

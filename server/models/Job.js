@@ -1,32 +1,24 @@
 const mongoose = require('mongoose');
 
 const JobSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true
-  },
-  company: {
-    type: String,
-    required: true
-  },
-  location: {
-    type: String,
-    required: true
-  },
-  salary: {
-    type: String, // Stored as string to allow "15 LPA" etc.
-    required: true
-  },
-  description: {
-    type: String,
-    required: true
-  },
+  title: { type: String, required: true },
+  company: { type: String, required: true },
+  location: { type: String, required: true },
+  salary: { type: String, required: true },
+  description: { type: String, required: true },
   type: {
     type: String,
     enum: ['Full-time', 'Part-time', 'Internship', 'Contract'],
     default: 'Full-time'
   },
   
+  // --- FAIR PLAY POLICY ---
+  jobPolicy: {
+    type: String,
+    enum: ['Exclusive', 'Open'],
+    default: 'Exclusive' 
+  },
+
   // --- JOB APPROVAL STATUS ---
   status: {
     type: String,
@@ -39,45 +31,30 @@ const JobSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  
   applicants: [
     {
-      studentId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      },
+      studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       name: String,
       email: String,
-      resume: String, // Path to file
+      resume: String, // Stores local path (e.g. "uploads/resume.pdf")
       status: {
         type: String,
-        // --- UPDATED ENUM LIST ---
-        // Added 'Interview Scheduled'
         enum: ['Pending', 'Accepted', 'Rejected', 'Confirmed', 'Withdrawn (System)', 'Interview Scheduled'],
         default: 'Pending'
       },
       
-      // --- FEEDBACK & INTERVIEW FIELDS ---
-      feedback: {
-        type: String,
-        default: ''
-      },
-      interviewDate: {
-        type: Date
-      },
-      interviewLink: {
-        type: String
-      },
+      // --- NEW AI FIELDS (Must be here to save scores) ---
+      aiScore: { type: Number, default: null },     // Stores 0-100
+      aiFeedback: { type: String, default: null },  // Stores the "Why"
 
-      appliedAt: {
-        type: Date,
-        default: Date.now
-      }
+      feedback: { type: String, default: '' },
+      interviewDate: { type: Date },
+      interviewLink: { type: String },
+      appliedAt: { type: Date, default: Date.now }
     }
   ],
-  postedAt: {
-    type: Date,
-    default: Date.now
-  }
+  postedAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('Job', JobSchema);
