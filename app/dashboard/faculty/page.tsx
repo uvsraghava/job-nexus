@@ -460,7 +460,7 @@ export default function FacultyDashboard() {
           </motion.div>
         </div>
 
-        {/* --- STUDENT REGISTRY & AI SCORES --- */}
+        {/* --- STUDENT REGISTRY & AI SCORES (UPDATED) --- */}
         <div className="mb-8 md:mb-12">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 gap-4">
                 <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2 text-white">
@@ -516,7 +516,12 @@ export default function FacultyDashboard() {
                                         </td>
                                         <td className="p-4 md:p-6">
                                             {s.resume ? (
-                                                <a href={`https://job-nexus-f3ub.onrender.com/${s.resume}`} target="_blank" rel="noopener noreferrer" className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-gray-300 border border-white/10 transition">
+                                                <a 
+                                                    href={s.resume.startsWith('http') ? s.resume : `https://job-nexus-f3ub.onrender.com/${s.resume}`} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-gray-300 border border-white/10 transition"
+                                                >
                                                     View PDF
                                                 </a>
                                             ) : (
